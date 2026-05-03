@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B. Portfolio — Design to Code</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,700;0,800;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+</head>
+<body>
+
+  <!-- UI 그리드 (work/stack/info 구간만) -->
+  <div class="grid-overlay" id="gridOverlay"></div>
+
+  <!-- 풀스크린 메뉴 -->
+  <div class="fullmenu" id="fullMenu">
+    <div class="fm-bg"></div>
+    <button class="fm-close" id="fmClose">✕ CLOSE</button>
+    <nav class="fm-nav">
+      <a href="#intro"   class="fm-link" data-num="01">Intro</a>
+      <a href="#work"    class="fm-link" data-num="02">Work</a>
+      <a href="#stack"   class="fm-link" data-num="03">Stack</a>
+      <a href="#info"    class="fm-link" data-num="04">Info</a>
+    </nav>
+    <div class="fm-footer">
+      <span class="w-300">byung3059@naver.com</span>
+      <span class="w-300">Seoul, KR · 2026</span>
+    </div>
+  </div>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- TOP HEADER -->
+  <div class="top-header">
+    <span class="top-logo">2026 PORTFOLIO</span>
+    <div class="top-right">
+      <div class="top-time-block">
+        <span class="time-label">KOR</span>
+        <span class="time-val" id="topTime">00:00:00</span>
+      </div>
+      <div class="top-status">
+        <span class="status-dot"></span>
+        <span>Available</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle">LIGHT</button>
+      <button class="top-menu" id="menuBtn">MENU</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="#intro"  class="hbtn active">INTRO</a>
+      <a href="#work"   class="hbtn">WORK</a>
+      <a href="#stack"  class="hbtn">STACK</a>
+      <a href="#info"   class="hbtn">INFO</a>
+    </div>
+  </header>
+
+  <!-- ======== INTRO — 다크 그리드 박스 ======== -->
+  <section id="intro">
+
+    <!-- 배경 Ripples (좌측 글로우 효과용) -->
+    <div class="intro-ripple-bg" id="rippleBg"></div>
+
+    <!-- 노이즈 텍스처 -->
+    <div class="intro-noise"></div>
+
+    <!-- 상단 헤더 바 -->
+    <div class="intro-top-bar">
+      <span class="itb-left w-300">PUBLISHER · FRONTEND DEVELOPER</span>
+      <span class="itb-center w-300">PORTFOLIO 2026</span>
+      <span class="itb-right w-300">SEOUL, KR</span>
+    </div>
+
+    <!-- 메인 그리드 레이아웃 -->
+    <div class="intro-grid">
+
+      <!-- 좌측: 큰 숫자 + 서브 -->
+      <div class="ig-left">
+        <!-- 메인 타이틀 -->
+        <div class="ig-main-text">
+          <p class="ig-label w-300">— Portfolio</p>
+          <h1 class="ig-title">
+            <span class="w-800">Design</span><br>
+            <span class="w-300 ig-title-italic">to</span><br>
+            <span class="w-800">Code</span>
+          </h1>
+          <p class="ig-sub w-300">
+            Turning design into seamless,<br>
+            interactive web experiences.
+          </p>
+        </div>
+        <!-- 하단 링크 -->
+        <div class="ig-view-more">
+          <span class="dot-indicator"></span>
+          <span class="w-300">View Work</span>
+        </div>
+      </div>
+
+      <!-- 우측 상단 2개 박스 -->
+      <div class="ig-right-top">
+        <!-- 박스 A: 소개 텍스트 -->
+        <div class="ig-box ig-box-a">
+          <p class="igb-label w-300">ABOUT</p>
+          <p class="igb-body w-300">
+            Code and design meet here.<br>
+            Pixel-perfect publishing and<br>
+            interactive frontend development.
+          </p>
+          <p class="igb-body-kr w-300 kr">
+            코드와 디자인의 경계에서<br>픽셀 단위로 완성합니다.
+          </p>
+        </div>
+
+        <!-- 박스 B: 평균 / 숫자 -->
+        <div class="ig-box ig-box-b">
+          <p class="igb-label w-300">EXPERIENCE</p>
+          <p class="igb-num w-800">1<span class="igb-unit w-300">yr+</span></p>
+          <p class="igb-num-desc w-300">Web Agency<br>Work Experience</p>
+        </div>
+      </div>
+
+      <!-- 우측 하단: 퍼센트 + 설명 -->
+      <div class="ig-right-bottom">
+        <!-- 박스 C: 프로젝트 수 -->
+        <div class="ig-box ig-box-c">
+          <p class="igb-label-top w-300">PROJECTS</p>
+          <p class="igb-big-num w-800">10<span class="igb-plus w-300">+</span></p>
+          <p class="igb-desc w-300">
+            Web Publishing<br>& Frontend Projects
+          </p>
+        </div>
+
+        <!-- 박스 D: 스킬 퍼센트 -->
+        <div class="ig-box ig-box-d">
+          <p class="igb-label-top w-300">STACK</p>
+          <div class="igb-stack-list">
+            <div class="isl-row">
+              <span class="isl-name w-700">HTML/CSS</span>
+              <span class="isl-bar"><span class="isl-fill" style="width:92%"></span></span>
+              <span class="isl-pct w-300">92%</span>
+            </div>
+            <div class="isl-row">
+              <span class="isl-name w-700">JavaScript</span>
+              <span class="isl-bar"><span class="isl-fill" style="width:80%"></span></span>
+              <span class="isl-pct w-300">80%</span>
+            </div>
+            <div class="isl-row">
+              <span class="isl-name w-700">React</span>
+              <span class="isl-bar"><span class="isl-fill" style="width:70%"></span></span>
+              <span class="isl-pct w-300">70%</span>
+            </div>
+            <div class="isl-row">
+              <span class="isl-name w-700">GSAP</span>
+              <span class="isl-bar"><span class="isl-fill" style="width:75%"></span></span>
+              <span class="isl-pct w-300">75%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 박스 E: 인용 -->
+        <div class="ig-box ig-box-e">
+          <p class="igb-quote w-300">
+            "Every project is a unique story —<br>
+            told through code, layout, and interaction."
+          </p>
+          <p class="igb-quote-kr w-300 kr">
+            모든 프로젝트는 코드와 레이아웃,<br>인터랙션으로 전하는 고유한 이야기입니다.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 하단 바 -->
+    <div class="intro-bottom-bar">
+      <span class="w-300">Byun-Young-Sung</span>
+      <div class="scroll-hint">
+        <div class="scroll-line"></div>
+        <span class="w-300">scroll</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ======== WORK ======== -->
+  <div id="work">
+    <div class="work-label">
+      <p class="label-eyebrow">Selected Work</p>
+      <h2 class="label-title">Projects</h2>
+    </div>
+    <div class="proj-panel" id="panel-01">
+      <div class="panel-inner">
+        <div class="panel-top">
+          <div class="panel-head"><span class="panel-num w-300">01 /</span><p class="panel-sub w-300">Corporate Website · 2024</p></div>
+          <h3 class="panel-title w-700">Entertainment<br>Official Site</h3>
+          <p class="panel-title-kr">엔터테인먼트 공식 사이트</p>
+        </div>
+        <div class="panel-bottom">
+          <p class="panel-desc w-300">Responsive web publishing, interactive main visual,<br>WebGL ripple effect implementation.<span class="kr">반응형 퍼블리싱, WebGL 물결 효과 구현</span></p>
+          <div class="panel-stack"><span>HTML</span><span>CSS</span><span>jQuery</span><span>WebGL</span></div>
+          <a href="#" class="panel-link w-700">View Project ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="proj-panel" id="panel-02">
+      <div class="panel-inner">
+        <div class="panel-top">
+          <div class="panel-head"><span class="panel-num w-300">02 /</span><p class="panel-sub w-300">E-Commerce · 2024</p></div>
+          <h3 class="panel-title w-700">Fashion Brand<br>Shopping Mall</h3>
+          <p class="panel-title-kr">패션 브랜드 쇼핑몰</p>
+        </div>
+        <div class="panel-bottom">
+          <p class="panel-desc w-300">Mobile-first UI, cart interaction,<br>animated filter system.<span class="kr">모바일 퍼스트 UI, 필터 애니메이션</span></p>
+          <div class="panel-stack"><span>React</span><span>SCSS</span><span>GSAP</span></div>
+          <a href="#" class="panel-link w-700">View Project ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="proj-panel" id="panel-03">
+      <div class="panel-inner">
+        <div class="panel-top">
+          <div class="panel-head"><span class="panel-num w-300">03 /</span><p class="panel-sub w-300">Landing Page · 2023</p></div>
+          <h3 class="panel-title w-700">Startup<br>Landing Page</h3>
+          <p class="panel-title-kr">스타트업 랜딩페이지</p>
+        </div>
+        <div class="panel-bottom">
+          <p class="panel-desc w-300">Scroll-based storytelling, parallax,<br>Lottie animation integration.<span class="kr">스크롤 스토리텔링, Lottie 애니메이션</span></p>
+          <div class="panel-stack"><span>HTML</span><span>GSAP</span><span>Lottie</span></div>
+          <a href="#" class="panel-link w-700">View Project ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="proj-panel" id="panel-04">
+      <div class="panel-inner">
+        <div class="panel-top">
+          <div class="panel-head"><span class="panel-num w-300">04 /</span><p class="panel-sub w-300">Dashboard · 2023</p></div>
+          <h3 class="panel-title w-700">Admin<br>Dashboard UI</h3>
+          <p class="panel-title-kr">관리자 대시보드 UI</p>
+        </div>
+        <div class="panel-bottom">
+          <p class="panel-desc w-300">Data visualization, dark mode,<br>component-based architecture.<span class="kr">데이터 시각화, 컴포넌트 기반 설계</span></p>
+          <div class="panel-stack"><span>React</span><span>Chart.js</span><span>Tailwind</span></div>
+          <a href="#" class="panel-link w-700">View Project ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== STACK ======== -->
+  <section id="stack">
+    <div class="section-header">
+      <p class="section-eyebrow w-300">Tech Stack</p>
+      <h2 class="section-title w-700">Skills &amp; Tools</h2>
+    </div>
+    <div class="stack-grid">
+      <div class="stack-item" data-tip="구조와 의미"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="html" width="80" height="80"></canvas></div><span class="stack-name w-700">HTML5</span><span class="stack-desc w-300">Semantic Markup</span></div>
+      <div class="stack-item" data-tip="레이아웃 & 스타일"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="css" width="80" height="80"></canvas></div><span class="stack-name w-700">CSS3</span><span class="stack-desc w-300">Layout & Animation</span></div>
+      <div class="stack-item" data-tip="인터랙션 구현"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="js" width="80" height="80"></canvas></div><span class="stack-name w-700">JavaScript</span><span class="stack-desc w-300">ES6+ / DOM</span></div>
+      <div class="stack-item" data-tip="컴포넌트 UI"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="react" width="80" height="80"></canvas></div><span class="stack-name w-700">React</span><span class="stack-desc w-300">Component UI</span></div>
+      <div class="stack-item" data-tip="애니메이션"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="gsap" width="80" height="80"></canvas></div><span class="stack-name w-700">GSAP</span><span class="stack-desc w-300">ScrollTrigger</span></div>
+      <div class="stack-item" data-tip="디자인 협업"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="figma" width="80" height="80"></canvas></div><span class="stack-name w-700">Figma</span><span class="stack-desc w-300">UI Design & Proto</span></div>
+      <div class="stack-item" data-tip="스타일 전처리"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="scss" width="80" height="80"></canvas></div><span class="stack-name w-700">SCSS</span><span class="stack-desc w-300">Preprocessor</span></div>
+      <div class="stack-item" data-tip="버전 관리"><div class="stack-icon-wrap"><canvas class="stack-canvas" data-shape="git" width="80" height="80"></canvas></div><span class="stack-name w-700">Git</span><span class="stack-desc w-300">Version Control</span></div>
+    </div>
+    <div class="stack-tooltip" id="stackTooltip"></div>
+  </section>
+
+  <!-- ======== INFO ======== -->
+  <section id="info">
+    <div class="info-title-row">
+      <h2 class="info-big-title w-800">ABOUT US<span class="info-dot">.</span></h2>
+    </div>
+    <div class="info-grid">
+      <div class="info-col info-col-name">
+        <h3 class="info-col-head w-700">Byun-Young-Sung</h3>
+        <p class="info-name-sub w-300 kr">웹 퍼블리셔 · 프론트엔드 개발자</p>
+        <p class="info-name-sub w-300">Publisher · Frontend Developer</p>
+        <div class="info-tags"><span>HTML/CSS</span><span>JavaScript</span><span>React</span><span>GSAP</span></div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-col info-col-contact">
+        <h3 class="info-col-head w-700">Contact</h3>
+        <div class="info-contact-list">
+          <div class="info-contact-row"><span class="info-contact-label w-700">Tel</span><span class="info-contact-val w-300">010-2300-3059</span></div>
+          <div class="info-contact-row"><span class="info-contact-label w-700">E-mail</span><span class="info-contact-val w-300">byung3059@naver.com</span></div>
+          <div class="info-contact-row"><span class="info-contact-label w-700">Github</span><a href="https://github.com/byung3059" class="info-contact-val w-300 info-link">github.com/byung3059</a></div>
+        </div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-col info-col-exp">
+        <h3 class="info-col-head w-700">Experiences</h3>
+        <div class="info-exp-list">
+          <div class="info-exp-item"><p class="info-exp-company w-700 kr">ENM 커뮤니케이션 웹 에이전시</p><p class="info-exp-period w-300">[2024.10.1 – 2025.3.31]</p></div>
+          <div class="info-exp-item"><p class="info-exp-company w-700 kr">아성직업전문학교 웹디자인 교육수료</p><p class="info-exp-period w-300">[2024.04.23 – 2025.8.07]</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="info-footer">
+      <p class="w-300 kr">해당 포트폴리오는 비상업적인 용도로 제작되었습니다.</p>
+      <p class="w-300">© 2026 BYS All right Reserved.</p>
+    </div>
+  </section>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="ripples.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
