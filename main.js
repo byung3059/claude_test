@@ -150,8 +150,10 @@ ScrollTrigger.create({
   onLeaveBack:()=>panels.forEach(p=>gsap.set(p,{position:'fixed'})),
 });
 
-/* === 3D Canvas 아이콘 === */
+/* === 3D SVG 아이콘 === */
 /* 테마에 따라 다크=흰색, 라이트=검정 */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 function cc(a) {
   const dark = document.documentElement.getAttribute('data-theme') !== 'light';
   return dark ? `rgba(255,255,255,${a})` : `rgba(26,26,26,${a})`;
@@ -165,147 +167,313 @@ function project3D(x,y,z,ax,ay,cx,cy,fov=200){
   const sc=fov/(fov+z2+100);
   return{x:cx+x1*sc, y:cy+y1*sc, z:z2, sc};
 }
-function drawEdges(ctx,verts,edges,color,lw){
-  ctx.strokeStyle=color; ctx.lineWidth=lw;
-  edges.forEach(([a,b])=>{
-    ctx.beginPath(); ctx.moveTo(verts[a].x,verts[a].y);
-    ctx.lineTo(verts[b].x,verts[b].y); ctx.stroke();
+
+/* SVG 헬퍼: 엣지 그룹(line 다발) 생성/갱신 */
+function makeEdgeGroup(svg, edges, opts){
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('stroke', opts.color);
+  g.setAttribute('stroke-width', opts.lw);
+  g.setAttribute('fill', 'none');
+  g.setAttribute('stroke-linecap', 'round');
+  if (opts.dash) g.setAttribute('stroke-dasharray', opts.dash);
+  const lines = edges.map(()=> {
+    const ln = document.createElementNS(SVG_NS, 'line');
+    g.appendChild(ln);
+    return ln;
   });
+  svg.appendChild(g);
+  return { g, lines, edges, opts, update(verts){
+    for (let i=0; i<edges.length; i++){
+      const [a,b] = edges[i];
+      const ln = lines[i];
+      ln.setAttribute('x1', verts[a].x.toFixed(2));
+      ln.setAttribute('y1', verts[a].y.toFixed(2));
+      ln.setAttribute('x2', verts[b].x.toFixed(2));
+      ln.setAttribute('y2', verts[b].y.toFixed(2));
+    }
+  }, recolor(c){ this.opts.color = c; g.setAttribute('stroke', c); }};
 }
 
-const shapes={
-  html(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2,s=24;
+/* SVG 헬퍼: polyline 한 개 */
+function makePolyline(svg, opts){
+  const pl = document.createElementNS(SVG_NS, 'polyline');
+  pl.setAttribute('stroke', opts.color);
+  pl.setAttribute('stroke-width', opts.lw);
+  pl.setAttribute('fill', 'none');
+  pl.setAttribute('stroke-linecap', 'round');
+  pl.setAttribute('stroke-linejoin', 'round');
+  if (opts.dash) pl.setAttribute('stroke-dasharray', opts.dash);
+  svg.appendChild(pl);
+  return { pl, opts, update(pts){
+    let s = '';
+    for (let i=0; i<pts.length; i++) s += pts[i].x.toFixed(2)+','+pts[i].y.toFixed(2)+' ';
+    pl.setAttribute('points', s);
+  }, recolor(c){ this.opts.color=c; pl.setAttribute('stroke', c); }};
+}
+
+/* SVG 헬퍼: 점(circle) */
+function makeDot(svg, opts){
+  const c = document.createElementNS(SVG_NS, 'circle');
+  c.setAttribute('fill', opts.color);
+  c.setAttribute('r', opts.r);
+  svg.appendChild(c);
+  return { c, opts, update(p, scale){
+    c.setAttribute('cx', p.x.toFixed(2));
+    c.setAttribute('cy', p.y.toFixed(2));
+    if (scale != null) c.setAttribute('r', (opts.r * scale).toFixed(2));
+  }, recolor(col){ this.opts.color=col; c.setAttribute('fill', col); }};
+}
+
+/* 셰이프별 빌더: SVG 안에 엘리먼트를 만들고 update(aA,aB) 함수를 반환 */
+const shapeBuilders = {
+  html(svg, W, H){
+    const cx=W/2, cy=H/2, s=24;
     const v=[[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s],[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]];
     const e=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-    drawEdges(ctx,v.map(([x,y,z])=>project3D(x,y,z,aA*.6,aA,cx,cy)),e,cc(0.55),1);
-    ctx.setLineDash([3,4]);
-    drawEdges(ctx,v.map(([x,y,z])=>project3D(x,y,z,-aB*.4,0.8-aB,cx,cy)),e,cc(0.20),1);
-    ctx.setLineDash([]);
-  },
-  css(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2,r=26;
-    function sph(ay,ax,col,lw,dash){
-      if(dash)ctx.setLineDash([2,4]);else ctx.setLineDash([]);
-      ctx.strokeStyle=col; ctx.lineWidth=lw;
-      for(let i=0;i<8;i++){
-        const phi=(i/8)*Math.PI*2; ctx.beginPath(); let f=true;
-        for(let t=0;t<=32;t++){
-          const th=(t/32)*Math.PI*2;
-          const p=project3D(Math.sin(th)*Math.cos(phi)*r,Math.cos(th)*r,Math.sin(th)*Math.sin(phi)*r,ax,ay,cx,cy);
-          f?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); f=false;
-        }
-        ctx.stroke();
+    const front = makeEdgeGroup(svg, e, {color:cc(0.55), lw:1});
+    const back  = makeEdgeGroup(svg, e, {color:cc(0.20), lw:1, dash:'3 4'});
+    return {
+      groups:[front, back],
+      colors:[0.55, 0.20],
+      update(aA, aB){
+        front.update(v.map(([x,y,z])=>project3D(x,y,z,aA*.6,aA,cx,cy)));
+        back .update(v.map(([x,y,z])=>project3D(x,y,z,-aB*.4,0.8-aB,cx,cy)));
       }
-      for(let i=1;i<5;i++){
-        const lat=(i/5)*Math.PI-Math.PI/2,rr=Math.cos(lat)*r,yy=Math.sin(lat)*r;
-        ctx.beginPath(); let f=true;
-        for(let t=0;t<=32;t++){
-          const ph2=(t/32)*Math.PI*2;
-          const p=project3D(Math.cos(ph2)*rr,yy,Math.sin(ph2)*rr,ax,ay,cx,cy);
-          f?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); f=false;
-        }
-        ctx.stroke();
-      }
-      ctx.setLineDash([]);
-    }
-    sph(aA,aA*.5,cc(0.55),.8,false);
-    sph(-aB,aB*.3,cc(0.20),.8,true);
+    };
   },
-  js(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2,s=26;
+
+  css(svg, W, H){
+    const cx=W/2, cy=H/2, r=26;
+    /* 두 개의 구체 와이어프레임 (앞/뒤). 각 구체는 경선 8개 + 위선 4개 = 폴리라인 12개 */
+    const buildSphere = (col, lw, dash) => {
+      const lines = [];
+      // 경선
+      for (let i=0;i<8;i++){
+        lines.push({type:'mer', phi:(i/8)*Math.PI*2, pl:makePolyline(svg,{color:col,lw,dash})});
+      }
+      // 위선
+      for (let i=1;i<5;i++){
+        const lat=(i/5)*Math.PI - Math.PI/2;
+        lines.push({type:'lat', lat, pl:makePolyline(svg,{color:col,lw,dash})});
+      }
+      return lines;
+    };
+    const sphA = buildSphere(cc(0.55), .8, null);
+    const sphB = buildSphere(cc(0.20), .8, '2 4');
+    const updateSphere = (lines, ax, ay) => {
+      for (const o of lines){
+        const pts = [];
+        if (o.type === 'mer'){
+          for (let t=0;t<=32;t++){
+            const th=(t/32)*Math.PI*2;
+            pts.push(project3D(Math.sin(th)*Math.cos(o.phi)*r, Math.cos(th)*r, Math.sin(th)*Math.sin(o.phi)*r, ax, ay, cx, cy));
+          }
+        } else {
+          const rr=Math.cos(o.lat)*r, yy=Math.sin(o.lat)*r;
+          for (let t=0;t<=32;t++){
+            const ph2=(t/32)*Math.PI*2;
+            pts.push(project3D(Math.cos(ph2)*rr, yy, Math.sin(ph2)*rr, ax, ay, cx, cy));
+          }
+        }
+        o.pl.update(pts);
+      }
+    };
+    return {
+      polylineGroups:[{lines:sphA, alpha:0.55},{lines:sphB, alpha:0.20}],
+      update(aA, aB){
+        updateSphere(sphA, aA*.5, aA);
+        updateSphere(sphB, aB*.3, -aB);
+      }
+    };
+  },
+
+  js(svg, W, H){
+    const cx=W/2, cy=H/2, s=26;
     const v=[[0,-s,0],[s,0,0],[0,0,s],[-s,0,0],[0,0,-s],[0,s,0]];
     const e=[[0,1],[0,2],[0,3],[0,4],[5,1],[5,2],[5,3],[5,4],[1,2],[2,3],[3,4],[4,1]];
-    drawEdges(ctx,v.map(([x,y,z])=>project3D(x,y,z,aA*.5,aA,cx,cy)),e,cc(0.55),1);
-    ctx.setLineDash([2,5]);
-    drawEdges(ctx,v.map(([x,y,z])=>project3D(x,y,z,-aB*.4,-aB+Math.PI/4,cx,cy)),e,cc(0.22),1);
-    ctx.setLineDash([]);
+    const front = makeEdgeGroup(svg, e, {color:cc(0.55), lw:1});
+    const back  = makeEdgeGroup(svg, e, {color:cc(0.22), lw:1, dash:'2 5'});
+    return {
+      groups:[front, back],
+      colors:[0.55, 0.22],
+      update(aA, aB){
+        front.update(v.map(([x,y,z])=>project3D(x,y,z,aA*.5,aA,cx,cy)));
+        back .update(v.map(([x,y,z])=>project3D(x,y,z,-aB*.4,-aB+Math.PI/4,cx,cy)));
+      }
+    };
   },
-  react(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2,rx=28,ry=10;
-    function orbit(ax,ay,col,lw,dash){
-      if(dash)ctx.setLineDash([2,4]);else ctx.setLineDash([]);
-      ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.beginPath(); let f=true;
-      for(let t=0;t<=64;t++){
+
+  react(svg, W, H){
+    const cx=W/2, cy=H/2, rx=28, ry=10;
+    /* 4개의 궤도 + 중심점 */
+    const orbits = [
+      { ay:0,            ax:0,            pl:makePolyline(svg,{color:cc(0.55),lw:.9}),  alpha:0.55, fix:'ay' },
+      { ay:0,            ax:Math.PI/3,    pl:makePolyline(svg,{color:cc(0.40),lw:.9}),  alpha:0.40, fix:'ay' },
+      { ay:0,            ax:-Math.PI/3,   pl:makePolyline(svg,{color:cc(0.28),lw:.9, dash:'2 4'}), alpha:0.28, fix:'ay' },
+      { ay:0,            ax:0,            pl:makePolyline(svg,{color:cc(0.16),lw:.8, dash:'2 4'}), alpha:0.16, fix:'ayNeg' },
+    ];
+    const center = makeDot(svg, {color:cc(0.5), r:3.5});
+    const buildOrbit = (ax, ay) => {
+      const pts = [];
+      for (let t=0;t<=64;t++){
         const ph=(t/64)*Math.PI*2;
-        const p=project3D(Math.cos(ph)*rx,Math.sin(ph)*ry,0,ax,ay,cx,cy);
-        f?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); f=false;
+        pts.push(project3D(Math.cos(ph)*rx, Math.sin(ph)*ry, 0, ax, ay, cx, cy));
       }
-      ctx.stroke(); ctx.setLineDash([]);
-    }
-    orbit(0,aA,cc(0.55),.9,false);
-    orbit(Math.PI/3,aA,cc(0.40),.9,false);
-    orbit(-Math.PI/3,aA,cc(0.28),.9,true);
-    orbit(0,-aB,cc(0.16),.8,true);
-    ctx.beginPath(); ctx.arc(cx,cy,3.5,0,Math.PI*2);
-    ctx.fillStyle=cc(0.5); ctx.fill();
-  },
-  gsap(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2;
-    function wave(phase,amp,col,lw,dash){
-      if(dash)ctx.setLineDash([3,5]);else ctx.setLineDash([]);
-      ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.beginPath();
-      for(let i=0;i<=60;i++){
-        const t=i/60,x=-28+t*56,y=Math.sin(t*Math.PI*3+phase)*amp,z=Math.cos(t*Math.PI*2+phase)*12;
-        const p=project3D(x,y,z,aA*.3,aA,cx,cy);
-        i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+      return pts;
+    };
+    return {
+      polylineGroups:[
+        {lines:[{pl:orbits[0].pl}], alpha:0.55},
+        {lines:[{pl:orbits[1].pl}], alpha:0.40},
+        {lines:[{pl:orbits[2].pl}], alpha:0.28},
+        {lines:[{pl:orbits[3].pl}], alpha:0.16},
+      ],
+      dots:[{dot:center, alpha:0.5}],
+      update(aA, aB){
+        orbits[0].pl.update(buildOrbit(0, aA));
+        orbits[1].pl.update(buildOrbit(Math.PI/3, aA));
+        orbits[2].pl.update(buildOrbit(-Math.PI/3, aA));
+        orbits[3].pl.update(buildOrbit(0, -aB));
+        center.update({x:cx, y:cy});
       }
-      ctx.stroke(); ctx.setLineDash([]);
-    }
-    wave(aA,18,cc(0.55),1,false);
-    wave(-aB+Math.PI,14,cc(0.22),1,true);
-    [[-28,0,0],[28,0,0]].forEach(([x,y,z])=>{
-      const p=project3D(x,y,z,aA*.3,aA,cx,cy);
-      ctx.beginPath(); ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
-      ctx.fillStyle=cc(0.45); ctx.fill();
-    });
+    };
   },
-  figma(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2,s=18;
+
+  gsap(svg, W, H){
+    const cx=W/2, cy=H/2;
+    const waveA = makePolyline(svg, {color:cc(0.55), lw:1});
+    const waveB = makePolyline(svg, {color:cc(0.22), lw:1, dash:'3 5'});
+    const dotL = makeDot(svg, {color:cc(0.45), r:2.5});
+    const dotR = makeDot(svg, {color:cc(0.45), r:2.5});
+    const buildWave = (phase, amp, aA) => {
+      const pts = [];
+      for (let i=0;i<=60;i++){
+        const t=i/60;
+        const x=-28+t*56;
+        const y=Math.sin(t*Math.PI*3+phase)*amp;
+        const z=Math.cos(t*Math.PI*2+phase)*12;
+        pts.push(project3D(x,y,z,aA*.3,aA,cx,cy));
+      }
+      return pts;
+    };
+    return {
+      polylineGroups:[
+        {lines:[{pl:waveA}], alpha:0.55},
+        {lines:[{pl:waveB}], alpha:0.22},
+      ],
+      dots:[{dot:dotL, alpha:0.45},{dot:dotR, alpha:0.45}],
+      update(aA, aB){
+        waveA.update(buildWave(aA, 18, aA));
+        waveB.update(buildWave(-aB+Math.PI, 14, aA));
+        const pL = project3D(-28,0,0,aA*.3,aA,cx,cy);
+        const pR = project3D( 28,0,0,aA*.3,aA,cx,cy);
+        dotL.update(pL); dotR.update(pR);
+      }
+    };
+  },
+
+  figma(svg, W, H){
+    const cx=W/2, cy=H/2, s=18;
     const t2=(1+Math.sqrt(5))/2;
     const iv=[[-1,t2,0],[1,t2,0],[-1,-t2,0],[1,-t2,0],[0,-1,t2],[0,1,t2],[0,-1,-t2],[0,1,-t2],[t2,0,-1],[t2,0,1],[-t2,0,-1],[-t2,0,1]].map(([x,y,z])=>{const l=Math.sqrt(x*x+y*y+z*z);return[x/l*s,y/l*s,z/l*s];});
     const ie=[[0,1],[0,5],[0,7],[0,10],[0,11],[1,5],[1,7],[1,8],[1,9],[2,3],[2,4],[2,6],[2,10],[2,11],[3,4],[3,6],[3,8],[3,9],[4,5],[4,9],[4,11],[5,9],[5,11],[6,7],[6,8],[6,10],[7,8],[7,10],[8,9],[10,11]];
-    drawEdges(ctx,iv.map(([x,y,z])=>project3D(x,y,z,aA*.4,aA,cx,cy)),ie,cc(0.50),.8);
-    ctx.setLineDash([2,5]);
-    drawEdges(ctx,iv.map(([x,y,z])=>project3D(x,y,z,-aB*.3,-aB+Math.PI/5,cx,cy)),ie,cc(0.18),.8);
-    ctx.setLineDash([]);
+    const front = makeEdgeGroup(svg, ie, {color:cc(0.50), lw:.8});
+    const back  = makeEdgeGroup(svg, ie, {color:cc(0.18), lw:.8, dash:'2 5'});
+    return {
+      groups:[front, back],
+      colors:[0.50, 0.18],
+      update(aA, aB){
+        front.update(iv.map(([x,y,z])=>project3D(x,y,z,aA*.4,aA,cx,cy)));
+        back .update(iv.map(([x,y,z])=>project3D(x,y,z,-aB*.3,-aB+Math.PI/5,cx,cy)));
+      }
+    };
   },
-  scss(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2,r=24,h=20;
+
+  scss(svg, W, H){
+    const cx=W/2, cy=H/2, r=24, h=20;
     const hv=[];
     for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2;hv.push([Math.cos(a)*r,-h,Math.sin(a)*r]);hv.push([Math.cos(a)*r,h,Math.sin(a)*r]);}
     const he=[];
     for(let i=0;i<6;i++){const nx=(i+1)%6;he.push([i*2,nx*2],[i*2+1,nx*2+1],[i*2,i*2+1]);}
-    drawEdges(ctx,hv.map(([x,y,z])=>project3D(x,y,z,aA*.5,aA,cx,cy)),he,cc(0.55),1);
-    ctx.setLineDash([2,4]);
-    drawEdges(ctx,hv.map(([x,y,z])=>project3D(x,y,z,-aB*.4,-aB+Math.PI/6,cx,cy)),he,cc(0.20),1);
-    ctx.setLineDash([]);
+    const front = makeEdgeGroup(svg, he, {color:cc(0.55), lw:1});
+    const back  = makeEdgeGroup(svg, he, {color:cc(0.20), lw:1, dash:'2 4'});
+    return {
+      groups:[front, back],
+      colors:[0.55, 0.20],
+      update(aA, aB){
+        front.update(hv.map(([x,y,z])=>project3D(x,y,z,aA*.5,aA,cx,cy)));
+        back .update(hv.map(([x,y,z])=>project3D(x,y,z,-aB*.4,-aB+Math.PI/6,cx,cy)));
+      }
+    };
   },
-  git(ctx,W,H,aA,aB){
-    const cx=W/2,cy=H/2;
+
+  git(svg, W, H){
+    const cx=W/2, cy=H/2;
     const nv=[[0,-28,0],[0,-10,12],[-14,8,-8],[14,8,-8],[0,24,0]];
     const ge=[[0,1],[0,2],[1,3],[2,4],[3,4],[1,2],[2,3]];
-    const vA=nv.map(([x,y,z])=>project3D(x,y,z,aA*.5,aA,cx,cy));
-    drawEdges(ctx,vA,ge,cc(0.50),1);
-    vA.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3*p.sc,0,Math.PI*2);ctx.fillStyle=cc(0.45);ctx.fill();});
-    ctx.setLineDash([2,5]);
-    drawEdges(ctx,nv.map(([x,y,z])=>project3D(x,y,z,-aB*.3,-aB+Math.PI/3,cx,cy)),ge,cc(0.18),1);
-    ctx.setLineDash([]);
+    const front = makeEdgeGroup(svg, ge, {color:cc(0.50), lw:1});
+    const back  = makeEdgeGroup(svg, ge, {color:cc(0.18), lw:1, dash:'2 5'});
+    const dots  = nv.map(()=> makeDot(svg, {color:cc(0.45), r:3}));
+    return {
+      groups:[front, back],
+      colors:[0.50, 0.18],
+      dots: dots.map(d=>({dot:d, alpha:0.45})),
+      update(aA, aB){
+        const vA = nv.map(([x,y,z])=>project3D(x,y,z,aA*.5,aA,cx,cy));
+        front.update(vA);
+        back .update(nv.map(([x,y,z])=>project3D(x,y,z,-aB*.3,-aB+Math.PI/3,cx,cy)));
+        for (let i=0; i<vA.length; i++) dots[i].update(vA[i], vA[i].sc);
+      }
+    };
   },
 };
 
-document.querySelectorAll('.stack-canvas').forEach(cv=>{
-  const shape=cv.dataset.shape;
-  if(!shapes[shape]) return;
-  const ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
-  let aA=0, aB=Math.PI/4;
-  (function tick(){
-    ctx.clearRect(0,0,W,H);
-    shapes[shape](ctx,W,H,aA,aB);
-    aA+=0.018; aB+=0.009;
-    requestAnimationFrame(tick);
-  })();
+/* 모든 stack-svg 초기화 + 애니메이션 루프 */
+const stackInstances = [];
+document.querySelectorAll('.stack-svg').forEach(svg=>{
+  const shape = svg.dataset.shape;
+  const builder = shapeBuilders[shape];
+  if(!builder) return;
+  const inst = builder(svg, 80, 80);
+  inst.shape = shape;
+  inst.aA = 0;
+  inst.aB = Math.PI/4;
+  stackInstances.push(inst);
 });
+
+(function tickAll(){
+  stackInstances.forEach(inst=>{
+    inst.aA += 0.018;
+    inst.aB += 0.009;
+    inst.update(inst.aA, inst.aB);
+  });
+  requestAnimationFrame(tickAll);
+})();
+
+/* 테마 변경 시 stroke / fill 색상 갱신 */
+function refreshStackColors(){
+  stackInstances.forEach(inst=>{
+    if (inst.groups && inst.colors){
+      inst.groups.forEach((g, i)=> g.recolor(cc(inst.colors[i])));
+    }
+    if (inst.polylineGroups){
+      inst.polylineGroups.forEach(pg=>{
+        pg.lines.forEach(l=> l.pl.recolor(cc(pg.alpha)));
+      });
+    }
+    if (inst.dots){
+      inst.dots.forEach(d=> d.dot.recolor(cc(d.alpha)));
+    }
+  });
+}
+
+/* 테마 변경 시 stroke / fill 색상 갱신
+   - applyTheme()를 재할당하지 않고, 토글 버튼 클릭 직후 색상만 갱신.
+   - 클릭 핸들러는 등록 순서대로 실행되므로,
+     기존 applyTheme가 data-theme를 바꾼 뒤 이 핸들러가 새 색상을 읽어 적용함. */
+themeToggle.addEventListener('click', refreshStackColors);
+/* 페이지 로드 시 저장된 테마가 적용된 직후의 색상도 한 번 맞춰줌 */
+refreshStackColors();
 
 /* Stack 진입 */
 gsap.set('.stack-item',{opacity:0});
